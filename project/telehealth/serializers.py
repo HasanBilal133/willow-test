@@ -14,7 +14,7 @@ class AddressSerializer(serializers.ModelSerializer):
 class SpecialitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Specialities
-        fields = ('id', 'specialitie', )
+        fields = '__all__'
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -31,34 +31,20 @@ class AccountSerializer(serializers.ModelSerializer):
         model = Doctor
         fields = '__all__' 
 
+    #customize the update method because it isn't able to update nested serializers
     def update(self, instance, validated_data):
         if 'address' in validated_data:
             nested_serializer = self.fields['address']
             nested_instance = instance.address
-            
-            print('insssss : ', nested_instance)
             nested_data = validated_data.pop('address')
             nested_serializer.update(nested_instance, nested_data)
         
         if 'specialities' in validated_data:
-            specialityList = validated_data.get('specialities')
-            for speciality in specialityList:
-                speciality_id = speciality.get('id', None)
-                if speciality_id:
-                    speciality_object = Specialities.objects.get(id=speciality_id)
-                    speciality_object.specialitie = speciality.get('specialitie', speciality_object.specialitie)
-                    speciality_object.save()
+            nested_serializer = self.fields['specialities']
+            nested_instance = instance.specialities
+            nested_data = validated_data.pop('specialities')
         
-        if id in validated_data:
-            doctor = Doctor.objects.get(id=id)
-            doctor.consultation_type = validated_data.get("consultation_type", doctor.consultation_type)
-            doctor.consultation_price = validated_data.get("consultation_price", doctor.consultation_price)
-            doctor.insurance_company = validated_data.get("insurance_company", doctor.insurance_company)
-            doctor.insurance_number = validated_data.get("insurance_number", doctor.insurance_number)
-            doctor.image = validated_data.get("image", doctor.image)
-            doctor.save()
-        
-        return instance
+        return super().update(instance, validated_data)
 
 
 class BookingsSerializer(serializers.ModelSerializer):
@@ -88,6 +74,7 @@ class RegisterSerializer(serializers.Serializer):
     insurance_number = serializers.CharField()
     image = serializers.ImageField(allow_null=True)
 
+    #customize the creat method because it is nested serializers 
     def create(self, validated_data):
         data = validated_data
         email = data.get('email')

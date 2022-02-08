@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, HttpResponse, redirect
 from django.contrib.auth import get_user_model
+import json
 from rest_framework.generics import RetrieveAPIView, RetrieveUpdateAPIView, ListAPIView, ListCreateAPIView, CreateAPIView
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -50,6 +51,19 @@ class UpdateDoctorAccount(RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AccountSerializer
     queryset = Doctor.objects.all()
+    
+    #customize the update method to update the spcialities of doctor
+    def update(self, *args, **kwargs):
+        json_data = json.loads(self.request.body)
+        specialities = json_data.get('specialities')
+        for speciality in specialities:
+            id = speciality.get('id')
+            if id is not None:
+                speciality_object = get_object_or_404(Specialities, id=id)
+                speciality_object.specialitie = speciality.get('specialitie')
+                speciality_object.save()
+
+        return super().update(*args, **kwargs)
 
 
 class RegisterView(CreateAPIView):
